@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install system dependencies needed by rembg and Pillow
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libgomp1 \
     curl \
@@ -15,14 +15,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
-
-# Pre-download the U2-Net model so it's baked into the image
-# This prevents cold-start delays at runtime
-RUN python -c "\
-import rembg; \
-from rembg import new_session; \
-s = new_session('u2net'); \
-print('U2-Net model downloaded and ready.')"
 
 # Copy application code
 COPY . .
@@ -39,5 +31,5 @@ ENV SERVE_STATIC=true
 # Expose port
 EXPOSE 8000
 
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Download the U2-Net model at startup (runtime) to ensure it's cached, then start uvicorn
+CMD python -c "from rembg import new_session; new_session('u2net')" && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1
