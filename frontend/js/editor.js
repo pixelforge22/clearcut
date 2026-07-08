@@ -308,14 +308,14 @@ const Editor = (() => {
       if (!e.ctrlKey && e.key === 'm') setTool('magic')
       if (e.key === '[') {
         brushSize = Math.max(4, brushSize - 4)
-        el('brushSize').value = brushSize
-        el('brushSizeVal').textContent = `${brushSize}px`
+        const bs = el('brushSize'); if (bs) bs.value = brushSize
+        const bsv = el('brushSizeVal'); if (bsv) bsv.textContent = `${brushSize}px`
         updateCursor()
       }
       if (e.key === ']') {
         brushSize = Math.min(120, brushSize + 4)
-        el('brushSize').value = brushSize
-        el('brushSizeVal').textContent = `${brushSize}px`
+        const bs = el('brushSize'); if (bs) bs.value = brushSize
+        const bsv = el('brushSizeVal'); if (bsv) bsv.textContent = `${brushSize}px`
         updateCursor()
       }
     })
@@ -327,12 +327,12 @@ const Editor = (() => {
 
     /* Sliders */
     const sliderMap = {
-      brushSize:     v => { brushSize     = +v; el('brushSizeVal').textContent     = `${v}px`; updateCursor() },
-      brushHardness: v => { brushHardness = +v; el('brushHardnessVal').textContent = `${v}%` },
-      tolerance:     v => { magicTol      = +v; el('toleranceVal').textContent     = v },
-      brightness:    v => { adj.brightness  = +v; el('brightnessVal').textContent  = v; renderFull() },
-      contrast:      v => { adj.contrast    = +v; el('contrastVal').textContent    = v; renderFull() },
-      saturation:    v => { adj.saturation  = +v; el('saturationVal').textContent  = v; renderFull() },
+      brushSize:     v => { brushSize = +v; const l = el('brushSizeVal'); if (l) l.textContent = `${v}px`; updateCursor() },
+      brushHardness: v => { brushHardness = +v; const l = el('brushHardnessVal'); if (l) l.textContent = `${v}%` },
+      tolerance:     v => { magicTol = +v; const l = el('toleranceVal'); if (l) l.textContent = v },
+      brightness:    v => { adj.brightness = +v; const l = el('brightnessVal'); if (l) l.textContent = v; renderFull() },
+      contrast:      v => { adj.contrast = +v; const l = el('contrastVal'); if (l) l.textContent = v; renderFull() },
+      saturation:    v => { adj.saturation = +v; const l = el('saturationVal'); if (l) l.textContent = v; renderFull() },
     }
     Object.entries(sliderMap).forEach(([id, fn]) => {
       const inp = el(id); if (inp) inp.addEventListener('input', () => fn(inp.value))
@@ -382,15 +382,20 @@ const Editor = (() => {
         document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'))
         document.querySelectorAll('.panel-content').forEach(c => c.classList.remove('active'))
         tab.classList.add('active')
-        el(`tab-${tab.dataset.tab}`).classList.add('active')
+        const tContent = el(`tab-${tab.dataset.tab}`)
+        if (tContent) tContent.classList.add('active')
         // Expand panel on mobile when tab is tapped
-        el('editorPanel').classList.remove('panel-collapsed')
+        const ep = el('editorPanel')
+        if (ep) ep.classList.remove('panel-collapsed')
       })
     )
 
     /* Mobile bottom-sheet handle toggle */
     const handle = el('panelHandle')
-    if (handle) handle.addEventListener('click', () => el('editorPanel').classList.toggle('panel-collapsed'))
+    if (handle) handle.addEventListener('click', () => {
+      const ep = el('editorPanel')
+      if (ep) ep.classList.toggle('panel-collapsed')
+    })
 
     /* Export buttons */
     ;['Png', 'Jpeg', 'Webp', 'Svg'].forEach(f => {
