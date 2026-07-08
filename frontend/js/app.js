@@ -28,9 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const resetBtn         = document.getElementById("resetBtn");
     const toast            = document.getElementById("toast");
 
-    // ─── Wire editor UI (event listeners inside Editor module) ─────────────────
-    Editor.wireUI();
-
     // ─── Helper: build a full URL to an API endpoint ───────────────────────────
     function apiUrl(endpoint) { return `${API_ORIGIN}${endpoint}`; }
     function currentKey()     { return apiKey; }
@@ -79,7 +76,11 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(checkApiHealth, 20000);
 
     // ─── File / URL Input Handling ─────────────────────────────────────────────
-    selectFileBtn.addEventListener("click", e => { e.stopPropagation(); fileInput.click(); });
+    // ─── Browse button ─────────────────────────────────────────────────────────
+    selectFileBtn.addEventListener("click", e => {
+        e.stopPropagation(); // prevent event reaching dropzone
+        fileInput.click();
+    });
 
     fileInput.addEventListener("change", () => {
         if (fileInput.files.length > 0) processFile(fileInput.files[0]);
@@ -91,10 +92,6 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         dropzone.classList.remove("dragover");
         if (e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]);
-    });
-    // Tap anywhere on dropzone also opens file dialog (mobile UX)
-    dropzone.addEventListener("click", e => {
-        if (e.target !== selectFileBtn) fileInput.click();
     });
 
     submitUrlBtn.addEventListener("click", () => {
@@ -211,4 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
         toast.classList.add("show");
         setTimeout(() => toast.classList.remove("show"), 3500);
     }
+
+    // ─── Wire editor UI LAST so any error here never breaks uploads ────────────
+    try { Editor.wireUI(); } catch (e) { console.warn("Editor init error:", e); }
 });

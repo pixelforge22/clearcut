@@ -335,14 +335,14 @@ const Editor = (() => {
     })
 
     /* Undo / Redo / Reset */
-    el('undoBtn').addEventListener('click', undo)
-    el('redoBtn').addEventListener('click', redo)
-    el('resetMaskBtn').addEventListener('click', () => {
-      alphaOverride.fill(1); saveHistory(); renderFull()
-    })
+    const undoBtn = el('undoBtn'); if (undoBtn) undoBtn.addEventListener('click', undo)
+    const redoBtn = el('redoBtn'); if (redoBtn) redoBtn.addEventListener('click', redo)
+    const resetMaskBtn = el('resetMaskBtn')
+    if (resetMaskBtn) resetMaskBtn.addEventListener('click', () => { alphaOverride.fill(1); saveHistory(); renderFull() })
 
     /* Adjustment reset */
-    el('resetAdjBtn').addEventListener('click', () => {
+    const resetAdjBtn = el('resetAdjBtn')
+    if (resetAdjBtn) resetAdjBtn.addEventListener('click', () => {
       adj.brightness = adj.contrast = adj.saturation = 0
       ;['brightness', 'contrast', 'saturation'].forEach(k => {
         const inp = el(k); if (inp) inp.value = 0
@@ -352,20 +352,21 @@ const Editor = (() => {
     })
 
     /* Background fill */
-    el('bgColorToggle').addEventListener('change', e => {
+    const bgTog = el('bgColorToggle')
+    if (bgTog) bgTog.addEventListener('change', e => {
       bg.enabled = e.target.checked
-      el('bgColorPicker').disabled = !bg.enabled
-      el('swatchesRow').classList.toggle('swatches-active', bg.enabled)
+      const bgp = el('bgColorPicker'); if (bgp) bgp.disabled = !bg.enabled
+      const swr = el('swatchesRow'); if (swr) swr.classList.toggle('swatches-active', bg.enabled)
     })
-    el('bgColorPicker').addEventListener('input', e => { bg.color = e.target.value })
+    const bgPicker = el('bgColorPicker')
+    if (bgPicker) bgPicker.addEventListener('input', e => { bg.color = e.target.value })
     document.querySelectorAll('.swatch').forEach(sw =>
       sw.addEventListener('click', () => {
         bg.color   = sw.dataset.color
         bg.enabled = true
-        el('bgColorToggle').checked    = true
-        el('bgColorPicker').value      = bg.color
-        el('bgColorPicker').disabled   = false
-        el('swatchesRow').classList.add('swatches-active')
+        const bgt = el('bgColorToggle'); if (bgt) { bgt.checked = true }
+        const bgp = el('bgColorPicker'); if (bgp) { bgp.value = bg.color; bgp.disabled = false }
+        const swr = el('swatchesRow');  if (swr) swr.classList.add('swatches-active')
         document.querySelectorAll('.swatch').forEach(s => s.classList.remove('swatch-selected'))
         sw.classList.add('swatch-selected')
       })
@@ -388,9 +389,10 @@ const Editor = (() => {
     if (handle) handle.addEventListener('click', () => el('editorPanel').classList.toggle('panel-collapsed'))
 
     /* Export buttons */
-    ;['Png', 'Jpeg', 'Webp', 'Svg'].forEach(f =>
-      el(`export${f}`).addEventListener('click', () => exportAs(f.toLowerCase()))
-    )
+    ;['Png', 'Jpeg', 'Webp', 'Svg'].forEach(f => {
+      const btn = el(`export${f}`)
+      if (btn) btn.addEventListener('click', () => exportAs(f.toLowerCase()))
+    })
   }
 
   /* ── Init ────────────────────────────────────────────────────────────── */
