@@ -1,0 +1,307 @@
+{
+  "info": {
+    "name": "ClearCut API",
+    "_postman_id": "clearcut-v1-collection",
+    "description": "Complete API collection for the ClearCut background removal service. Import this file into Postman to test all endpoints. Set the `baseUrl` and `apiKey` collection variables before running.\n\n**Default API Key**: `clearcut_dev_key_2026`\n**Default Base URL**: `http://localhost:8000`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "clearcut_dev_key_2026",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "",
+      "type": "string",
+      "description": "Populated automatically after creating an async job."
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Check the API service status, database connectivity, and model availability. No authentication required."
+      },
+      "response": [
+        {
+          "name": "200 OK — Healthy",
+          "status": "OK",
+          "code": 200,
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": "{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2026-07-08T02:00:00.000000\",\n  \"version\": \"1.0.0\",\n  \"services\": {\n    \"database\": \"connected\",\n    \"model_loaded\": true\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Remove Background — File Upload (Image Response)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Response is image/png', function () { pm.expect(pm.response.headers.get('Content-Type')).to.include('image/png'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": [],
+              "description": "Select a JPEG, PNG, or WEBP image file to process (max 10MB)"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/remove-background?format=image",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "remove-background"],
+          "query": [{"key": "format", "value": "image"}]
+        },
+        "description": "Upload an image file and receive a transparent PNG back directly. The response body contains the binary PNG file with a transparent background."
+      }
+    },
+    {
+      "name": "Remove Background — File Upload (JSON Response)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test('Response has result_url', function () { pm.expect(data).to.have.property('result_url'); });",
+              "pm.collectionVariables.set('jobId', data.job_id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": [],
+              "description": "Select a JPEG, PNG, or WEBP image file to process (max 10MB)"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/remove-background?format=json",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "remove-background"],
+          "query": [{"key": "format", "value": "json"}]
+        },
+        "description": "Upload an image and receive a JSON response containing the job ID, status, and a result_url to download the processed PNG. The `jobId` variable is automatically saved from this response."
+      }
+    },
+    {
+      "name": "Remove Background — Remote URL",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "url",
+              "value": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Cute_dog.jpg/280px-Cute_dog.jpg",
+              "type": "text",
+              "description": "A publicly accessible direct image URL"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/remove-background?format=json",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "remove-background"],
+          "query": [{"key": "format", "value": "json"}]
+        },
+        "description": "Process an image from a remote URL instead of a file upload. The server fetches the image, applies background removal, and returns the result."
+      }
+    },
+    {
+      "name": "Remove Background — Async Mode",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test('Job created with pending status', function () { pm.expect(data.status).to.be.oneOf(['pending', 'processing', 'completed']); });",
+              "pm.collectionVariables.set('jobId', data.job_id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": [],
+              "description": "Select a large image file for async processing"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/remove-background?async=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "remove-background"],
+          "query": [{"key": "async", "value": "true"}]
+        },
+        "description": "Submit an image for background removal in the background. Returns immediately with a job ID. Poll GET /v1/jobs/{job_id} to check status. The `jobId` collection variable is set automatically."
+      }
+    },
+    {
+      "name": "Get Job Status",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200 or 404', function () { pm.expect([200, 404]).to.include(pm.response.code); });",
+              "if (pm.response.code === 200) {",
+              "  const data = pm.response.json();",
+              "  pm.test('Has job_id and status', function () {",
+              "    pm.expect(data).to.have.property('job_id');",
+              "    pm.expect(data).to.have.property('status');",
+              "  });",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/jobs/{{jobId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "jobs", "{{jobId}}"]
+        },
+        "description": "Check the status of an asynchronous background removal job. Poll this endpoint until status is 'completed', then download the result via the result_url."
+      }
+    },
+    {
+      "name": "Download Job Result",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200, 400, or 404', function () { pm.expect([200, 400, 404]).to.include(pm.response.code); });",
+              "if (pm.response.code === 200) {",
+              "  pm.test('Response is image/png', function () { pm.expect(pm.response.headers.get('Content-Type')).to.include('image/png'); });",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/jobs/{{jobId}}/result",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "jobs", "{{jobId}}", "result"]
+        },
+        "description": "Download the final transparent PNG result for a completed job. Returns a binary PNG file with the background removed."
+      }
+    },
+    {
+      "name": "Invalid API Key (Test Auth)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Returns 401 for invalid key', function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "invalid_key_for_testing"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/jobs/test",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "jobs", "test"]
+        },
+        "description": "Test that an invalid API key is correctly rejected with a 401 Unauthorized response."
+      }
+    }
+  ]
+}

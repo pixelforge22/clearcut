@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: clearcut-api
+    runtime: docker
+    # Render builds from the root of the repo using the root Dockerfile
+    dockerfilePath: ./Dockerfile
+    plan: standard  # Minimum 1GB RAM for the U2-Net model
+    disk:
+      name: clearcut-data
+      mountPath: /app/data
+      sizeGB: 2
+    envVars:
+      - key: DATABASE_URL
+        value: /app/data/clearcut.db
+      - key: UPLOADS_DIR
+        value: /app/data/uploads
+      - key: OUTPUTS_DIR
+        value: /app/data/outputs
+      - key: FRONTEND_DIR
+        value: /app/frontend
+      - key: SERVE_STATIC
+        value: "true"
+      - key: DEFAULT_API_KEY
+        generateValue: true   # Render auto-generates a secure random value
+      - key: RATE_LIMIT_LIMIT
+        value: "60"
+      - key: RATE_LIMIT_PERIOD
+        value: "60"
+    healthCheckPath: /health

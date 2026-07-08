@@ -1,0 +1,31 @@
+services:
+  clearcut:
+    build:
+      context: .                  # Root of repo — includes both backend/ and frontend/
+      dockerfile: Dockerfile
+    container_name: clearcut-api
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist database, uploads, and processed outputs between restarts
+      - clearcut-data:/app/data
+    environment:
+      - DATABASE_URL=/app/data/clearcut.db
+      - UPLOADS_DIR=/app/data/uploads
+      - OUTPUTS_DIR=/app/data/outputs
+      - FRONTEND_DIR=/app/frontend
+      - DEFAULT_API_KEY=${DEFAULT_API_KEY:-clearcut_dev_key_2026}
+      - RATE_LIMIT_LIMIT=${RATE_LIMIT_LIMIT:-60}
+      - RATE_LIMIT_PERIOD=${RATE_LIMIT_PERIOD:-60}
+      - SERVE_STATIC=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  clearcut-data:
+    driver: local
