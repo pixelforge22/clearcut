@@ -146,8 +146,8 @@ document.addEventListener("DOMContentLoaded", () => {
         showStage("processing");
         setLoader("Uploading image…", "Sending to server", 15);
 
-        imgOriginal.src = originalSrc;
         imgOriginal.onload = alignSliderImages;
+        imgOriginal.src = originalSrc;
 
         try {
             const res = await fetch(apiUrl("/v1/remove-background?format=json"), {
@@ -220,15 +220,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const blob    = await res.blob();
             const blobUrl = URL.createObjectURL(blob);
 
-            imgProcessed.src    = blobUrl;
-            downloadBtn.href    = blobUrl;
-            downloadBtn.download = `clearcut_${Date.now()}.png`;
-
             imgProcessed.onload = () => {
                 showStage("result");
                 updateSlider(50);
                 alignSliderImages();
             };
+            imgProcessed.src    = blobUrl;
+            downloadBtn.href    = blobUrl;
+            downloadBtn.download = `clearcut_${Date.now()}.png`;
         } catch (err) {
             showStage("upload");
             showToast(err.message || "Failed to retrieve result image.");
