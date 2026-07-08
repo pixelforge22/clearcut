@@ -16,13 +16,6 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Pre-download the U2-Net model into the image layer
-# Avoids cold-start delay on first request
-RUN python -c "\
-from rembg import new_session; \
-s = new_session('u2net'); \
-print('U2-Net model downloaded and ready.')"
-
 # Copy backend application code
 COPY backend/app ./app
 
@@ -41,5 +34,5 @@ ENV SERVE_STATIC=true
 
 EXPOSE 8000
 
-# Use shell form so Railway's injected $PORT env var is expanded at runtime
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1
+# Download the U2-Net model at startup (runtime) to ensure it's cached, then start uvicorn
+CMD python -c "from rembg import new_session; new_session('u2net')" && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1
