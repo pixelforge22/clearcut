@@ -8,14 +8,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Works identically on localhost:8000 and https://clearcut.onrender.com
     const API_ORIGIN = window.location.origin;
 
-    // API key: read from localStorage so it persists across refreshes.
-    // Falls back to the default development key.
-    let apiKey = localStorage.getItem("clearcut_api_key") || "clearcut_dev_key_2026";
+    // API key: default development key used under the hood
+    const apiKey = "clearcut_dev_key_2026";
 
     // ─── UI Element References ─────────────────────────────────────────────────
-    const apiKeyInput        = document.getElementById("apiKey");
-    const settingsToggle     = document.getElementById("settingsToggle");
-    const settingsDrawer     = document.getElementById("settingsDrawer");
     const apiStatusBadge     = document.querySelector(".api-status-badge");
 
     const stageUpload        = document.getElementById("stageUpload");
@@ -46,11 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const snippetPanes       = document.querySelectorAll(".snippet-pane");
     const copyCodeBtn        = document.getElementById("copyCodeBtn");
     const toast              = document.getElementById("toast");
-    const apiServerDisplay   = document.getElementById("apiServerDisplay");
 
     // ─── Init ──────────────────────────────────────────────────────────────────
-    apiKeyInput.value = apiKey;
-    if (apiServerDisplay) apiServerDisplay.textContent = API_ORIGIN;
     updateSnippets();   // Reflect current origin in the code snippet pane
 
     // ─── Helper: build a full URL to an API endpoint ───────────────────────────
@@ -58,21 +51,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return `${API_ORIGIN}${endpoint}`;
     }
 
-    // ─── Helper: current key from input ────────────────────────────────────────
+    // ─── Helper: current key ───────────────────────────────────────────────────
     function currentKey() {
-        return apiKeyInput.value.trim() || apiKey;
+        return apiKey;
     }
-
-    // ─── Settings Panel ────────────────────────────────────────────────────────
-    settingsToggle.addEventListener("click", () => {
-        settingsDrawer.classList.toggle("collapsed");
-    });
-
-    apiKeyInput.addEventListener("input", (e) => {
-        apiKey = e.target.value.trim();
-        localStorage.setItem("clearcut_api_key", apiKey);
-        updateSnippets();
-    });
 
     // ─── API Health Check ──────────────────────────────────────────────────────
     async function checkApiHealth() {
