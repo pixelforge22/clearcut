@@ -240,6 +240,7 @@ const Editor = (() => {
 
   /* ── Cursor ──────────────────────────────────────────────────────────── */
   function updateCursor() {
+    if (!canvas) return
     if (window.matchMedia('(pointer: coarse)').matches) {
       canvas.style.cursor = 'crosshair'  // Mobile: no cursor needed
       return
@@ -266,37 +267,40 @@ const Editor = (() => {
   function setupEvents() {
 
     /* Canvas pointer events (covers mouse + touch + stylus) */
-    canvas.addEventListener('pointerdown', e => {
-      e.preventDefault()
-      canvas.setPointerCapture(e.pointerId)
-      isDrawing = true
-      const { x, y } = toImg(e.clientX, e.clientY)
-      lastX = x; lastY = y
-      if (tool === 'magic') {
-        saveHistory(); magicErase(x, y); isDrawing = false; return
-      }
-      applyBrushAt(x, y)
-    })
+    if (canvas) {
+      canvas.addEventListener('pointerdown', e => {
+        e.preventDefault()
+        canvas.setPointerCapture(e.pointerId)
+        isDrawing = true
+        const { x, y } = toImg(e.clientX, e.clientY)
+        lastX = x; lastY = y
+        if (tool === 'magic') {
+          saveHistory(); magicErase(x, y); isDrawing = false; return
+        }
+        applyBrushAt(x, y)
+      })
 
-    canvas.addEventListener('pointermove', e => {
-      if (!isDrawing) return
-      e.preventDefault()
-      const { x, y } = toImg(e.clientX, e.clientY)
-      const dx = x - lastX, dy = y - lastY
-      const steps = Math.max(1, Math.ceil(Math.sqrt(dx * dx + dy * dy) / 3))
-      for (let s = 1; s <= steps; s++) {
-        applyBrushAt(Math.round(lastX + dx * s / steps), Math.round(lastY + dy * s / steps))
-      }
-      lastX = x; lastY = y
-    })
+      canvas.addEventListener('pointermove', e => {
+        if (!isDrawing) return
+        e.preventDefault()
+        const { x, y } = toImg(e.clientX, e.clientY)
+        const dx = x - lastX, dy = y - lastY
+        const steps = Math.max(1, Math.ceil(Math.sqrt(dx * dx + dy * dy) / 3))
+        for (let s = 1; s <= steps; s++) {
+          applyBrushAt(Math.round(lastX + dx * s / steps), Math.round(lastY + dy * s / steps))
+        }
+        lastX = x; lastY = y
+      })
 
-    const stopDraw = () => { if (isDrawing) { saveHistory(); isDrawing = false } }
-    canvas.addEventListener('pointerup', stopDraw)
-    canvas.addEventListener('pointercancel', stopDraw)
+      const stopDraw = () => { if (isDrawing) { saveHistory(); isDrawing = false } }
+      canvas.addEventListener('pointerup', stopDraw)
+      canvas.addEventListener('pointercancel', stopDraw)
+    }
 
     /* Keyboard shortcuts (desktop) */
     document.addEventListener('keydown', e => {
-      if (el('stageResult').classList.contains('hidden')) return
+      const stageRes = el('stageResult')
+      if (!stageRes || stageRes.classList.contains('hidden')) return
       if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo() }
       if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo() }
       if (!e.ctrlKey && e.key === 'e') setTool('erase')
@@ -462,7 +466,13 @@ const Editor = (() => {
   }
 
   /* ── First-time event wiring (called once on DOMContentLoaded) ───────── */
-  function wireUI() { setupEvents() }
+  function wireUI() {
+    canvas = el('editorCanvas')
+    if (canvas) {
+      ctx = canvas.getContext('2d', { willReadFrequently: true })
+    }
+    setupEvents()
+  }
 
   return { init, reset, wireUI }
 })()
