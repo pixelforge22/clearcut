@@ -69,6 +69,7 @@ const Editor = (() => {
   /* ── Render (dirty-region for performance) ───────────────────────────── */
   function renderRegion(rx, ry, rw, rh) {
     if (!canvas || rw <= 0 || rh <= 0) return
+    console.log(`[Editor] Rendering region: x=${rx}, y=${ry}, w=${rw}, h=${rh}`);
     const imgData = ctx.createImageData(rw, rh)
     const out = imgData.data
     const src = originalData
@@ -108,6 +109,8 @@ const Editor = (() => {
     const x1 = Math.min(imageWidth  - 1, imgX + rad)
     const y1 = Math.min(imageHeight - 1, imgY + rad)
 
+    console.log(`[Editor] Brush at: x=${imgX}, y=${imgY}, rad=${rad}, tool=${tool}`);
+
     let changed = false
     for (let py = y0; py <= y1; py++) {
       for (let px = x0; px <= x1; px++) {
@@ -121,9 +124,10 @@ const Editor = (() => {
 
         const idx = py * imageWidth + px
         if (tool === 'erase'   && alphaOverride[idx] !== 0) { alphaOverride[idx] = 0; changed = true }
-        if (tool === 'restore' && alphaOverride[idx] !== 1) { alphaOverride[idx] = 1; changed = true }
+        if (tool === 'restore' && alphaOverride[idx] !== 2) { alphaOverride[idx] = 2; changed = true }
       }
     }
+    console.log(`[Editor] Changed pixels: ${changed}`);
     if (changed) renderRegion(x0, y0, x1 - x0 + 1, y1 - y0 + 1)
   }
 
