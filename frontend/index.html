@@ -249,13 +249,16 @@
                                         <div class="panel-divider"></div>
 
                                         <p class="section-label">Background Fill <span class="label-hint">(JPEG export)</span></p>
-                                        <div class="bg-row">
+                                        <div class="bg-row" style="display:flex; align-items:center; justify-content:space-between; width:100%;">
                                             <label class="toggle-label">
                                                 <input type="checkbox" id="bgColorToggle">
                                                 <span class="toggle-track"></span>
                                                 Enable
                                             </label>
-                                            <input type="color" id="bgColorPicker" value="#ffffff" disabled class="color-picker">
+                                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                                                <span class="hint-text" style="font-size:0.75rem;">Custom:</span>
+                                                <input type="color" id="bgColorPicker" value="#ffffff" class="color-picker" title="Choose any colour">
+                                            </div>
                                         </div>
                                         <div class="swatches" id="swatchesRow">
                                             <button class="swatch" data-color="#ffffff" style="background:#ffffff" title="White"></button>
