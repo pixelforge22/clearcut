@@ -1251,21 +1251,22 @@ code {
 
 @media (max-width: 767px) {
 
-    /* ── Page base ── */
+    /* ── Page base (non-editor screens) ── */
     .hero-title    { font-size: 2rem; }
     .hero-subtitle { font-size: 1rem; }
     .app-container { padding: 1rem; gap: 1.5rem; }
-
-    /* Buttons full-width in upload stage only */
     .btn { width: 100%; }
     .url-field { flex-direction: column; }
     .workspace-card { min-height: 320px; padding: 1.25rem; }
 
     /* ══════════════════════════════════════════════════════
        EDITOR — full-screen phone layout
+       Key principle: everything is a flex column.
+       canvas-viewport gets flex:1 and fills the exact
+       remaining height between topbar and panel.
     ══════════════════════════════════════════════════════ */
 
-    /* Lock page scroll while editor is active */
+    /* Lock body scroll while editor is open */
     body.editor-open {
         overflow: hidden;
         position: fixed;
@@ -1273,7 +1274,7 @@ code {
         height: 100%;
     }
 
-    /* Workspace card becomes a full-screen layer */
+    /* Workspace card = full viewport */
     .workspace-card.editing {
         position: fixed;
         inset: 0;
@@ -1286,169 +1287,145 @@ code {
         flex-direction: column;
     }
 
+    /* stageResult fills workspace */
     #stageResult {
-        flex: 1;
+        flex: 1 1 0;
+        min-height: 0;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        padding-bottom: 0;           /* panel is fixed, not in flow */
+        padding-bottom: 0;
     }
 
-    /* Editor layout — vertical stack */
+    /* editor-layout fills stageResult */
     .editor-layout {
-        flex: 1;
-        flex-direction: column;
+        flex: 1 1 0;
         min-height: 0;
+        flex-direction: column;
         overflow: hidden;
     }
 
-    /* ── Topbar (compact) ── */
+    /* Canvas area fills editor-layout minus panel */
     .editor-canvas-area {
-        flex: 1;
+        flex: 1 1 0;
+        min-height: 0;
         display: flex;
         flex-direction: column;
-        min-height: 0;
         overflow: hidden;
     }
 
+    /* ── Topbar — compact, never shrinks ── */
     .canvas-topbar {
-        padding: 0.4rem 0.75rem;
         flex-shrink: 0;
+        padding: 0.4rem 0.75rem;
     }
+    .canvas-info      { font-size: 0.72rem; }
+    .canvas-keys-hint { display: none; }
 
-    .canvas-info       { font-size: 0.72rem; }
-    .canvas-keys-hint  { display: none; }       /* no keyboard on phones */
-
-    /* Zoom controls — slightly smaller */
-    .zoom-controls {
-        height: 30px;
-        padding: 2px 4px;
-        gap: 0.2rem;
-    }
+    .zoom-controls    { height: 30px; padding: 2px 4px; gap: 0.2rem; }
     .zoom-btn-control { width: 24px; height: 24px; }
     .zoom-level-val   { font-size: 0.72rem; min-width: 36px; }
 
-    /* ── Canvas viewport — fills all remaining space ── */
+    /* Crop confirm bar — compact */
+    .crop-confirm-bar { padding: 0.4rem 0.75rem; font-size: 0.74rem; flex-shrink: 0; }
+    .crop-confirm-btn { padding: 0.28rem 0.7rem; font-size: 0.74rem; }
+
+    /* ── Canvas viewport — fills ALL remaining space ──
+       This is the only thing that scrolls. */
     .canvas-viewport {
-        flex: 1;
+        flex: 1 1 0;
         min-height: 0;
-        max-height: none;          /* remove the 48 vh cap */
+        max-height: none;
         padding: 0.5rem;
-        overflow: auto;            /* only THIS scrolls on mobile */
+        overflow: auto;
         -webkit-overflow-scrolling: touch;
-        touch-action: pan-x pan-y; /* allow two-finger panning the viewport */
+        touch-action: pan-x pan-y;
     }
 
     #editorCanvas {
-        max-height: none;          /* let canvas be its natural size */
+        max-height: none;
         max-width: none;
     }
 
-    /* Crop confirm bar — full width */
-    .crop-confirm-bar {
-        padding: 0.4rem 0.75rem;
-        font-size: 0.74rem;
-    }
-    .crop-confirm-btn {
-        padding: 0.28rem 0.7rem;
-        font-size: 0.74rem;
-    }
-
     /* ══════════════════════════════════════════════════════
-       TOOL PANEL — permanently fixed to the bottom
+       TOOL PANEL — at the bottom of the flex column.
+       NOT position:fixed — stays in document flow so the
+       canvas auto-shrinks to leave room for it.
     ══════════════════════════════════════════════════════ */
 
     .editor-panel {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
+        position: relative;          /* ← back in normal flow */
+        bottom: auto;
+        left: auto;
+        right: auto;
         width: 100%;
-        /* Natural height — no collapse, no transform */
-        max-height: 50vh;
+        flex-shrink: 0;              /* never shrink — always full height */
+        max-height: 48vh;            /* cap so canvas still gets space */
         border-left: none;
         border-top: 2px solid var(--border-color);
         border-radius: 18px 18px 0 0;
         box-shadow: 0 -6px 32px rgba(0,0,0,0.55);
-        z-index: 200;
-        transform: none !important;  /* never collapse on phones */
+        z-index: 10;
+        transform: none !important;
         display: flex;
         flex-direction: column;
         background: var(--bg-surface);
         padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    /* Kill the old collapse behaviour completely on mobile */
+    /* Kill the old slide-up collapse on mobile */
     .editor-panel.panel-collapsed {
         transform: none !important;
     }
 
-    /* Drag handle — hidden (panel is always open on phones) */
+    /* Drag handle — hidden (panel always open) */
     .panel-handle { display: none; }
 
-    /* Tabs — bigger tap targets */
-    .panel-tabs    { flex-shrink: 0; }
-    .panel-tab {
+    /* Tabs */
+    .panel-tabs { flex-shrink: 0; }
+    .panel-tab  {
         font-size: 0.78rem;
         padding: 0.55rem 0.3rem;
         min-height: 46px;
     }
 
-    /* Panel body scrolls if content overflows */
+    /* Panel body scrolls within its max-height */
     .panel-body {
-        flex: 1;
+        flex: 1 1 0;
+        min-height: 0;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
 
-    /* ── Tool grid — 3 buttons side by side ── */
-    .tool-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    .tool-btn {
-        min-height: 56px;
-        font-size: 0.82rem;
-        padding: 0.55rem 0.3rem;
-        gap: 0.3rem;
-    }
-    .tool-btn-wide {
-        grid-column: span 3; /* Make pan/wide button span full row */
-    }
+    /* ── Tool grid — 3 wide touch targets ── */
+    .tool-grid              { grid-template-columns: repeat(3, 1fr); }
+    .tool-btn               { min-height: 56px; font-size: 0.82rem; padding: 0.55rem 0.3rem; gap: 0.3rem; }
+    .tool-btn-wide          { grid-column: span 3; }
 
-    /* Larger slider thumb for fingers */
+    /* Touch-friendly sliders, swatches, buttons */
     .pslider::-webkit-slider-thumb { width: 24px; height: 24px; }
     .pslider::-moz-range-thumb     { width: 24px; height: 24px; }
-
-    /* Swatches */
-    .swatch { border-radius: 8px; }
-
-    /* Action buttons */
-    .act-btn    { min-height: 48px; }
+    .swatch       { border-radius: 8px; }
+    .act-btn      { min-height: 48px; }
     .color-picker { width: 44px; height: 44px; }
 
     /* Export */
     .export-grid { grid-template-columns: 1fr 1fr; }
     .export-btn  { min-height: 70px; }
 
-    /* Footer (Reset Another) stays above the fixed panel */
-    .editor-footer {
-        position: fixed;
-        bottom: calc(var(--panel-height, 200px) + env(safe-area-inset-bottom, 0px));
-        left: 0;
-        right: 0;
-        z-index: 199;
-        display: none; /* hidden — use Export tab instead */
-    }
+    /* Footer — hidden on mobile (use Export tab) */
+    .editor-footer { display: none; }
 }
 
 /* Very small screens */
 @media (max-width: 380px) {
-    .panel-tab { gap: 0.15rem; font-size: 0.7rem; }
     .panel-tab svg { display: none; }
-    .export-grid { grid-template-columns: 1fr; }
-    .swatches { grid-template-columns: repeat(4, 1fr); }
-    .tool-btn { min-height: 50px; font-size: 0.76rem; }
+    .panel-tab     { gap: 0.15rem; font-size: 0.7rem; }
+    .export-grid   { grid-template-columns: 1fr; }
+    .swatches      { grid-template-columns: repeat(4, 1fr); }
+    .tool-btn      { min-height: 50px; font-size: 0.76rem; }
 }
+
 
 
 /* ═══════════════════════════════════════════════════════════════
