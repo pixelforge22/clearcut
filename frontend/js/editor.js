@@ -724,9 +724,9 @@ const Editor = (() => {
       const info = el('canvasInfo')
       if (info) info.textContent = `${imageWidth} × ${imageHeight} px`
 
-      // Start panel collapsed on mobile
+      // On mobile: lock body scroll and go full-screen editor
       if (window.innerWidth < 768) {
-        el('editorPanel').classList.add('panel-collapsed')
+        document.body.classList.add('editor-open')
       }
 
       URL.revokeObjectURL(objUrl)
@@ -741,6 +741,7 @@ const Editor = (() => {
     history.length = 0; histIdx = -1
     isDrawing = false
     if (canvas) { canvas.width = 0; canvas.height = 0 }
+    document.body.classList.remove('editor-open')
   }
 
   /* ── First-time event wiring (called once on DOMContentLoaded) ───────── */
