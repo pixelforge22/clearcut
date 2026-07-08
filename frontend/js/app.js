@@ -38,13 +38,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const resetBtn           = document.getElementById("resetBtn");
     const downloadBtn        = document.getElementById("downloadBtn");
 
-    const snippetTabs        = document.querySelectorAll(".tab-btn");
-    const snippetPanes       = document.querySelectorAll(".snippet-pane");
-    const copyCodeBtn        = document.getElementById("copyCodeBtn");
     const toast              = document.getElementById("toast");
 
     // ─── Init ──────────────────────────────────────────────────────────────────
-    updateSnippets();   // Reflect current origin in the code snippet pane
 
     // ─── Helper: build a full URL to an API endpoint ───────────────────────────
     function apiUrl(endpoint) {
@@ -250,65 +246,6 @@ document.addEventListener("DOMContentLoaded", () => {
         showStage("upload");
     });
 
-    // ─── Code Snippet Tabs ─────────────────────────────────────────────────────
-    snippetTabs.forEach((tab) => {
-        tab.addEventListener("click", () => {
-            snippetTabs.forEach((t) => t.classList.remove("active"));
-            snippetPanes.forEach((p) => p.classList.remove("active"));
-            tab.classList.add("active");
-            document.getElementById(`pane-${tab.dataset.tab}`)?.classList.add("active");
-        });
-    });
-
-    copyCodeBtn.addEventListener("click", () => {
-        const code = document.querySelector(".snippet-pane.active code");
-        if (code) {
-            navigator.clipboard.writeText(code.textContent.trim())
-                .then(() => showToast("Snippet copied!"))
-                .catch(() => showToast("Copy failed — please select manually."));
-        }
-    });
-
-    // Update snippet panes to reflect current API origin and key dynamically
-    function updateSnippets() {
-        const origin = API_ORIGIN;
-        const key    = currentKey();
-
-        document.getElementById("pane-curl").querySelector("code").innerHTML =
-`<span class="token-comment"># Remove background and save the transparent PNG</span>
-curl -X POST <span class="token-string">"${origin}/v1/remove-background"</span> \\
-  -H <span class="token-string">"X-API-Key: ${key}"</span> \\
-  -F <span class="token-string">"file=@my_image.jpg"</span> \\
-  --output result.png`;
-
-        document.getElementById("pane-python").querySelector("code").innerHTML =
-`<span class="token-keyword">import</span> requests
-
-url     = <span class="token-string">"${origin}/v1/remove-background"</span>
-headers = {<span class="token-string">"X-API-Key"</span>: <span class="token-string">"${key}"</span>}
-
-<span class="token-keyword">with</span> open(<span class="token-string">"my_image.jpg"</span>, <span class="token-string">"rb"</span>) <span class="token-keyword">as</span> f:
-    response = requests.post(url, headers=headers, files={<span class="token-string">"file"</span>: f})
-
-<span class="token-keyword">if</span> response.status_code == 200:
-    <span class="token-keyword">with</span> open(<span class="token-string">"result.png"</span>, <span class="token-string">"wb"</span>) <span class="token-keyword">as</span> out:
-        out.write(response.content)
-    print(<span class="token-string">"✓ Saved to result.png"</span>)`;
-
-        document.getElementById("pane-js").querySelector("code").innerHTML =
-`<span class="token-keyword">const</span> form = <span class="token-keyword">new</span> FormData();
-form.append(<span class="token-string">'file'</span>, fileInput.files[0]);
-
-<span class="token-keyword">const</span> res = <span class="token-keyword">await</span> fetch(<span class="token-string">'${origin}/v1/remove-background'</span>, {
-  method:  <span class="token-string">'POST'</span>,
-  headers: { <span class="token-string">'X-API-Key'</span>: <span class="token-string">'${key}'</span> },
-  body:    form
-});
-
-<span class="token-keyword">const</span> blob = <span class="token-keyword">await</span> res.blob();
-<span class="token-keyword">const</span> url  = URL.createObjectURL(blob);
-document.querySelector(<span class="token-string">'img'</span>).src = url;`;
-    }
 
     // ─── Toast ─────────────────────────────────────────────────────────────────
     function showToast(msg) {

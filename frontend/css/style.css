@@ -7,10 +7,10 @@
     --border-color: #242436;
     --border-hover: #32324e;
     
-    --color-accent: #a855f7;
-    --color-accent-hover: #b975f9;
-    --color-accent-rgb: 168, 85, 247;
-    --color-blue: #3b82f6;
+    --color-accent: #FFC300;
+    --color-accent-hover: #ffd033;
+    --color-accent-rgb: 255, 195, 0;
+    --color-blue: #ff9f00;
     --color-success: #10b981;
     --color-danger: #ef4444;
 

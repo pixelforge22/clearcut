@@ -21,16 +21,16 @@
                     <path d="M26 4L6 26" stroke="url(#logo-grad-line)" stroke-width="1.5" stroke-linecap="round"/>
                     <defs>
                         <linearGradient id="logo-grad-1" x1="4" y1="4" x2="22.1" y2="22.1" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#a855f7"/>
-                            <stop offset="1" stop-color="#6366f1"/>
+                            <stop stop-color="#FFC300"/>
+                            <stop offset="1" stop-color="#ff9f00"/>
                         </linearGradient>
                         <linearGradient id="logo-grad-2" x1="9.9" y1="9.9" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#3b82f6"/>
-                            <stop offset="1" stop-color="#1d4ed8"/>
+                            <stop stop-color="#ff9f00"/>
+                            <stop offset="1" stop-color="#e67e00"/>
                         </linearGradient>
                         <linearGradient id="logo-grad-line" x1="26" y1="4" x2="6" y2="26" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#f472b6"/>
-                            <stop offset="1" stop-color="#a855f7"/>
+                            <stop stop-color="#ffffff"/>
+                            <stop offset="1" stop-color="#FFC300"/>
                         </linearGradient>
                     </defs>
                 </svg>
@@ -140,62 +140,7 @@
                 </div>
             </section>
 
-            <!-- API Snippets Section -->
-            <section class="api-console-section">
-                <div class="api-console-header">
-                    <h2>Developer Integration</h2>
-                    <div class="snippet-tabs">
-                        <button class="tab-btn active" data-tab="curl">cURL</button>
-                        <button class="tab-btn" data-tab="python">Python</button>
-                        <button class="tab-btn" data-tab="js">JavaScript</button>
-                    </div>
-                </div>
-                <div class="api-console-body">
-                    <div class="snippet-pane active" id="pane-curl">
-                        <pre><code><span class="token-comment"># Remove background and get processed image directly</span>
-curl -X POST <span class="token-string">"http://localhost:8000/v1/remove-background"</span> \
-  -H <span class="token-string">"X-API-Key: clearcut_dev_key_2026"</span> \
-  -F <span class="token-string">"file=@my_image.jpg"</span> \
-  --output result.png</code></pre>
-                    </div>
-                    <div class="snippet-pane" id="pane-python">
-                        <pre><code><span class="token-keyword">import</span> requests
 
-url = <span class="token-string">"http://localhost:8000/v1/remove-background"</span>
-headers = {<span class="token-string">"X-API-Key"</span>: <span class="token-string">"clearcut_dev_key_2026"</span>}
-files = {<span class="token-string">"file"</span>: open(<span class="token-string">"my_image.jpg"</span>, <span class="token-string">"rb"</span>)}
-
-response = requests.post(url, headers=headers, files=files)
-
-<span class="token-keyword">if</span> response.status_code == 200:
-    with open(<span class="token-string">"result.png"</span>, <span class="token-string">"wb"</span>) as f:
-        f.write(response.content)
-    print(<span class="token-string">"Success!"</span>)</code></pre>
-                    </div>
-                    <div class="snippet-pane" id="pane-js">
-                        <pre><code><span class="token-keyword">const</span> formData = <span class="token-keyword">new</span> FormData();
-formData.append(<span class="token-string">'file'</span>, fileInput.files[0]);
-
-fetch(<span class="token-string">'http://localhost:8000/v1/remove-background'</span>, {
-  method: <span class="token-string">'POST'</span>,
-  headers: {
-    <span class="token-string">'X-API-Key'</span>: <span class="token-string">'clearcut_dev_key_2026'</span>
-  },
-  body: formData
-})
-.then(res => res.blob())
-.then(blob => {
-  <span class="token-keyword">const</span> url = URL.createObjectURL(blob);
-  <span class="token-keyword">const</span> img = document.createElement(<span class="token-string">'img'</span>);
-  img.src = url;
-  document.body.appendChild(img);
-});</code></pre>
-                    </div>
-                    <button class="btn-copy" id="copyCodeBtn" title="Copy code snippet">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                    </button>
-                </div>
-            </section>
         </main>
 
         <!-- Toast Notifications -->
