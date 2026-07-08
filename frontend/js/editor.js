@@ -12,12 +12,7 @@ const Editor = (() => {
   let alphaOverride  // Uint8Array per pixel: 0=erased | 1=AI-alpha | 2=restored
   let zoomScale = 1.0
 
-  // Cropping state (values are percentage 0.0 - 1.0 of canvas size)
-  let isCropping = false
-  const cropBox = { left: 0, top: 0, width: 1.0, height: 1.0 }
-  let activeHandle = null
-  let startX = 0, startY = 0
-  let startBox = {}
+
 
   // Panning state
   let isPanning = false
@@ -70,8 +65,6 @@ const Editor = (() => {
     
     const zVal = el('zoomLevelVal')
     if (zVal) zVal.textContent = `${Math.round(zoomScale * 100)}%`
-
-    if (isCropping) updateCropOverlayUI()
   }
 
   function resetZoom() {
@@ -100,188 +93,6 @@ const Editor = (() => {
     if (zoomScale <= 0.05) zoomScale = 1.0 // safety fallback
     
     applyZoom()
-    // If in crop mode, update overlay positions to match new scaled canvas dimensions
-    if (isCropping) updateCropOverlayUI()
-  }
-
-  /* ── Crop Helpers ────────────────────────────────────────────────────── */
-  function startCropMode() {
-    isCropping = true
-    const overlay = el('cropOverlay')
-    if (!overlay) return
-    overlay.classList.remove('hidden')
-    
-    // Initial size matches canvas (100% cover)
-    cropBox.left = 0
-    cropBox.top = 0
-    cropBox.width = 1.0
-    cropBox.height = 1.0
-    updateCropOverlayUI()
-  }
-
-  function updateCropOverlayUI() {
-    const overlay = el('cropOverlay')
-    if (!overlay || !canvas) return
-    
-    const cWidth  = canvas.clientWidth
-    const cHeight = canvas.clientHeight
-    
-    overlay.style.left   = (cropBox.left * cWidth) + 'px'
-    overlay.style.top    = (cropBox.top * cHeight) + 'px'
-    overlay.style.width  = (cropBox.width * cWidth) + 'px'
-    overlay.style.height = (cropBox.height * cHeight) + 'px'
-  }
-
-  function applyCrop() {
-    if (!canvas || !originalData) return
-    
-    const imgX = Math.round(cropBox.left * imageWidth)
-    const imgY = Math.round(cropBox.top * imageHeight)
-    const imgW = Math.round(cropBox.width * imageWidth)
-    const imgH = Math.round(cropBox.height * imageHeight)
-    
-    if (imgW <= 5 || imgH <= 5) return // safety check
-    
-    console.log(`[Editor] Cropping image from ${imageWidth}x${imageHeight} to ${imgW}x${imgH} at offset x=${imgX}, y=${imgY}`)
-    
-    // Slice pixel channels
-    const newOriginal = new Uint8ClampedArray(imgW * imgH * 4)
-    const newAlpha = new Uint8Array(imgW * imgH)
-    
-    for (let dy = 0; dy < imgH; dy++) {
-      const srcY = imgY + dy
-      if (srcY < 0 || srcY >= imageHeight) continue
-      
-      for (let dx = 0; dx < imgW; dx++) {
-        const srcX = imgX + dx
-        if (srcX < 0 || srcX >= imageWidth) continue
-        
-        const srcIdx = (srcY * imageWidth + srcX) * 4
-        const dstIdx = (dy * imgW + dx) * 4
-        
-        newOriginal[dstIdx]     = originalData[srcIdx]
-        newOriginal[dstIdx + 1] = originalData[srcIdx + 1]
-        newOriginal[dstIdx + 2] = originalData[srcIdx + 2]
-        newOriginal[dstIdx + 3] = originalData[srcIdx + 3]
-        
-        newAlpha[dy * imgW + dx] = alphaOverride[srcY * imageWidth + srcX]
-      }
-    }
-    
-    // Commit new dimensions
-    imageWidth    = imgW
-    imageHeight   = imgH
-    originalData  = newOriginal
-    alphaOverride = newAlpha
-    
-    canvas.width  = imgW
-    canvas.height = imgH
-    
-    // Clear history logs and baseline to avoid offset conflicts
-    history.length = 0
-    histIdx = -1
-    saveHistory()
-    
-    renderFull()
-    resetZoom()
-    cancelCropMode()
-    
-    const info = el('canvasInfo')
-    if (info) info.textContent = `${imageWidth} × ${imageHeight} px`
-  }
-
-  function cancelCropMode() {
-    isCropping = false
-    const overlay = el('cropOverlay')
-    if (overlay) overlay.classList.add('hidden')
-    setTool('erase') // fall back to painting tool
-  }
-
-  function setupCropDrag() {
-    const overlay = el('cropOverlay')
-    if (!overlay) return
-    
-    const handleDown = (e, handle) => {
-      e.preventDefault()
-      e.stopPropagation()
-      activeHandle = handle
-      startX = e.clientX
-      startY = e.clientY
-      startBox = { ...cropBox }
-      document.addEventListener('pointermove', handleMove)
-      document.addEventListener('pointerup', handleUp)
-    }
-    
-    overlay.addEventListener('pointerdown', e => {
-      if (e.target.classList.contains('crop-handle')) return
-      handleDown(e, 'move')
-    })
-    
-    ;['nw', 'ne', 'sw', 'se'].forEach(h => {
-      const elH = overlay.querySelector(`.crop-handle.${h}`)
-      if (elH) elH.addEventListener('pointerdown', e => handleDown(e, h))
-    })
-    
-    const handleMove = e => {
-      if (!activeHandle || !canvas) return
-      e.preventDefault()
-      const dx = e.clientX - startX
-      const dy = e.clientY - startY
-      
-      const cWidth  = canvas.clientWidth
-      const cHeight = canvas.clientHeight
-      if (cWidth <= 0 || cHeight <= 0) return
-      
-      const dxPercent = dx / cWidth
-      const dyPercent = dy / cHeight
-      
-      if (activeHandle === 'move') {
-        cropBox.left = Math.max(0, Math.min(1.0 - cropBox.width, startBox.left + dxPercent))
-        cropBox.top  = Math.max(0, Math.min(1.0 - cropBox.height, startBox.top + dyPercent))
-      } else {
-        const leftPx   = startBox.left * cWidth
-        const topPx    = startBox.top * cHeight
-        const widthPx  = startBox.width * cWidth
-        const heightPx = startBox.height * cHeight
-        
-        let newLeftPx   = leftPx
-        let newTopPx    = topPx
-        let newWidthPx  = widthPx
-        let newHeightPx = heightPx
-        
-        const minPx = 30
-        
-        if (activeHandle.includes('w')) {
-          const maxLeftPx = leftPx + widthPx - minPx
-          newLeftPx  = Math.max(0, Math.min(maxLeftPx, leftPx + dx))
-          newWidthPx = widthPx + (leftPx - newLeftPx)
-        }
-        if (activeHandle.includes('e')) {
-          newWidthPx = Math.max(minPx, Math.min(cWidth - leftPx, widthPx + dx))
-        }
-        if (activeHandle.includes('n')) {
-          const maxTopPx = topPx + heightPx - minPx
-          newTopPx    = Math.max(0, Math.min(maxTopPx, topPx + dy))
-          newHeightPx = heightPx + (topPx - newTopPx)
-        }
-        if (activeHandle.includes('s')) {
-          newHeightPx = Math.max(minPx, Math.min(cHeight - topPx, heightPx + dy))
-        }
-        
-        cropBox.left   = newLeftPx / cWidth
-        cropBox.top    = newTopPx / cHeight
-        cropBox.width  = newWidthPx / cWidth
-        cropBox.height = newHeightPx / cHeight
-      }
-      
-      updateCropOverlayUI()
-    }
-    
-    const handleUp = () => {
-      activeHandle = null
-      document.removeEventListener('pointermove', handleMove)
-      document.removeEventListener('pointerup', handleUp)
-    }
   }
 
   /* ── Pixel math ──────────────────────────────────────────────────────── */
@@ -505,17 +316,10 @@ const Editor = (() => {
     document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === t))
     
     const isMagic = t === 'magic'
-    const isCrop  = t === 'crop'
     const isPan   = t === 'pan'
     
-    const bc = el('brushControls'); if (bc) bc.style.display = (isMagic || isCrop || isPan) ? 'none' : 'flex'
+    const bc = el('brushControls'); if (bc) bc.style.display = (isMagic || isPan) ? 'none' : 'flex'
     const tg = el('toleranceGroup'); if (tg) tg.style.display = isMagic ? 'flex' : 'none'
-    
-    if (isCrop) {
-      startCropMode()
-    } else {
-      cancelCropMode()
-    }
     
     updateCursor()
   }
@@ -600,7 +404,7 @@ const Editor = (() => {
       if (!e.ctrlKey && e.key.toLowerCase() === 'e') setTool('erase')
       if (!e.ctrlKey && e.key.toLowerCase() === 'r') setTool('restore')
       if (!e.ctrlKey && e.key.toLowerCase() === 'm') setTool('magic')
-      if (!e.ctrlKey && e.key.toLowerCase() === 'c') setTool('crop')
+
       if (!e.ctrlKey && e.key.toLowerCase() === 'h') setTool('pan')
       if (e.key === '[') {
         brushSize = Math.max(4, brushSize - 4)
@@ -708,13 +512,6 @@ const Editor = (() => {
     if (zOut) zOut.addEventListener('click', () => { zoomScale = Math.max(0.1, zoomScale - 0.15); applyZoom() })
     const zReset = el('zoomResetBtn')
     if (zReset) zReset.addEventListener('click', resetZoom)
-
-    /* Crop buttons & Drag setup */
-    const cropApply = el('cropApplyBtn')
-    if (cropApply) cropApply.addEventListener('click', applyCrop)
-    const cropCancel = el('cropCancelBtn')
-    if (cropCancel) cropCancel.addEventListener('click', cancelCropMode)
-    setupCropDrag()
 
     /* Export buttons */
     ;['Png', 'Jpeg', 'Webp', 'Svg'].forEach(f => {
