@@ -10,6 +10,7 @@ const Editor = (() => {
   let imageWidth = 0, imageHeight = 0
   let originalData   // Uint8ClampedArray – AI output, immutable
   let alphaOverride  // Uint8Array per pixel: 0=erased | 1=AI-alpha | 2=restored
+  let zoomScale = 1.0
 
   const adj = { brightness: 0, contrast: 0, saturation: 0 }
   const bg  = { enabled: false, color: '#ffffff' }
@@ -43,6 +44,49 @@ const Editor = (() => {
     const r = canvas.getBoundingClientRect()
     // Convert screen-px brush radius → image-px radius
     return Math.max(1, Math.ceil((brushSize / 2) * imageWidth / r.width))
+  }
+
+  /* ── Zoom helpers ────────────────────────────────────────────────────── */
+  function applyZoom() {
+    if (!canvas) return
+    // Remove the default max-width/max-height constraints when zoomed
+    canvas.style.maxWidth = 'none'
+    canvas.style.maxHeight = 'none'
+    
+    // Set explicit size
+    canvas.style.width  = (imageWidth * zoomScale) + 'px'
+    canvas.style.height = (imageHeight * zoomScale) + 'px'
+    
+    const zVal = el('zoomLevelVal')
+    if (zVal) zVal.textContent = `${Math.round(zoomScale * 100)}%`
+  }
+
+  function resetZoom() {
+    if (!canvas) return
+    const viewport = el('canvasViewport')
+    if (!viewport) {
+      // Fallback to default constraints if viewport is missing
+      canvas.style.maxWidth = '100%'
+      canvas.style.maxHeight = '60vh'
+      canvas.style.width = 'auto'
+      canvas.style.height = 'auto'
+      zoomScale = 1.0
+      const zVal = el('zoomLevelVal')
+      if (zVal) zVal.textContent = '100%'
+      return
+    }
+    
+    const vWidth  = viewport.clientWidth - 40 // padding
+    const vHeight = viewport.clientHeight - 40
+    
+    const scaleX = vWidth / imageWidth
+    const scaleY = vHeight / imageHeight
+    
+    // Fit completely inside the viewport, but cap at 1.0 (100%) so we don't upscale small images too much
+    zoomScale = Math.min(1.0, Math.min(scaleX, scaleY))
+    if (zoomScale <= 0.05) zoomScale = 1.0 // safety fallback
+    
+    applyZoom()
   }
 
   /* ── Pixel math ──────────────────────────────────────────────────────── */
@@ -401,6 +445,14 @@ const Editor = (() => {
       if (ep) ep.classList.toggle('panel-collapsed')
     })
 
+    /* Zoom buttons */
+    const zIn = el('zoomInBtn')
+    if (zIn) zIn.addEventListener('click', () => { zoomScale = Math.min(4.0, zoomScale + 0.15); applyZoom() })
+    const zOut = el('zoomOutBtn')
+    if (zOut) zOut.addEventListener('click', () => { zoomScale = Math.max(0.1, zoomScale - 0.15); applyZoom() })
+    const zReset = el('zoomResetBtn')
+    if (zReset) zReset.addEventListener('click', resetZoom)
+
     /* Export buttons */
     ;['Png', 'Jpeg', 'Webp', 'Svg'].forEach(f => {
       const btn = el(`export${f}`)
@@ -450,6 +502,7 @@ const Editor = (() => {
       history.length = 0; histIdx = -1
       saveHistory()
       renderFull()
+      resetZoom()
       updateCursor()
 
       const info = el('canvasInfo')

@@ -99,6 +99,18 @@
                             <div class="editor-canvas-area">
                                 <div class="canvas-topbar">
                                     <span class="canvas-info" id="canvasInfo">— × —</span>
+                                    <div class="zoom-controls">
+                                        <button class="zoom-btn-control" id="zoomOutBtn" title="Zoom Out">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        </button>
+                                        <span class="zoom-level-val" id="zoomLevelVal">100%</span>
+                                        <button class="zoom-btn-control" id="zoomInBtn" title="Zoom In">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        </button>
+                                        <button class="zoom-btn-control" id="zoomResetBtn" title="Fit Screen">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                                        </button>
+                                    </div>
                                     <span class="canvas-keys-hint">E · R · M &nbsp;|&nbsp; [ ] size</span>
                                 </div>
                                 <div class="canvas-viewport image-bg-checkerboard" id="canvasViewport">

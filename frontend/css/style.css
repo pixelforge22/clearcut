@@ -781,10 +781,52 @@ code {
     max-width: 100%;
     max-height: 60vh;
     display: block;
+    margin: auto;
     border-radius: 6px;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+}
+
+/* Zoom Controls styling */
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 2px 6px;
+    height: 32px;
+}
+
+.zoom-btn-control {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: var(--transition-smooth);
+}
+
+.zoom-btn-control:hover {
+    background: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.zoom-level-val {
+    font-family: var(--font-code);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    min-width: 44px;
+    text-align: center;
+    user-select: none;
 }
 
 /* ── Tool panel ──────────────────────────────────────────────── */
