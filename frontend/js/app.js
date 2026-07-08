@@ -1,55 +1,59 @@
 // ClearCut Client Application
 // API calls always go to the same origin this page is served from.
-// The only user-configurable value is the API Key.
 
 document.addEventListener("DOMContentLoaded", () => {
-    // ─── Configuration ────────────────────────────────────────────────────────
-    // Always use the same server that serves this page.
-    // Works identically on localhost:8000 and https://clearcut.onrender.com
-    const API_ORIGIN = window.location.origin;
 
-    // API key: default development key used under the hood
+    // ─── Configuration ────────────────────────────────────────────────────────
+    const API_ORIGIN = window.location.origin;
     const apiKey = "clearcut_dev_key_2026";
 
     // ─── UI Element References ─────────────────────────────────────────────────
-    const apiStatusBadge     = document.querySelector(".api-status-badge");
+    const apiStatusBadge   = document.querySelector(".api-status-badge");
 
-    const stageUpload        = document.getElementById("stageUpload");
-    const stageProcessing    = document.getElementById("stageProcessing");
-    const stageResult        = document.getElementById("stageResult");
+    const stageUpload      = document.getElementById("stageUpload");
+    const stageProcessing  = document.getElementById("stageProcessing");
+    const stageResult      = document.getElementById("stageResult");
+    const workspaceCard    = document.getElementById("workspaceCard");
 
-    const dropzone           = document.getElementById("dropzone");
-    const fileInput          = document.getElementById("fileInput");
-    const selectFileBtn      = document.getElementById("selectFileBtn");
-    const imageUrlInput      = document.getElementById("imageUrlInput");
-    const submitUrlBtn       = document.getElementById("submitUrlBtn");
+    const dropzone         = document.getElementById("dropzone");
+    const fileInput        = document.getElementById("fileInput");
+    const selectFileBtn    = document.getElementById("selectFileBtn");
+    const imageUrlInput    = document.getElementById("imageUrlInput");
+    const submitUrlBtn     = document.getElementById("submitUrlBtn");
 
-    const processingStatus   = document.getElementById("processingStatus");
-    const processingDetail   = document.getElementById("processingDetail");
-    const progressBar        = document.getElementById("progressBar");
+    const processingStatus = document.getElementById("processingStatus");
+    const processingDetail = document.getElementById("processingDetail");
+    const progressBar      = document.getElementById("progressBar");
 
-    const comparisonWrapper  = document.getElementById("comparisonWrapper");
-    const imgOriginalWrapper = document.getElementById("imgOriginalWrapper");
-    const imgOriginal        = document.getElementById("imgOriginal");
-    const imgProcessed       = document.getElementById("imgProcessed");
-    const comparisonDivider  = document.getElementById("comparisonDivider");
-    const comparisonRange    = document.getElementById("comparisonRange");
+    const resetBtn         = document.getElementById("resetBtn");
+    const toast            = document.getElementById("toast");
 
-    const resetBtn           = document.getElementById("resetBtn");
-    const downloadBtn        = document.getElementById("downloadBtn");
-
-    const toast              = document.getElementById("toast");
-
-    // ─── Init ──────────────────────────────────────────────────────────────────
+    // ─── Wire editor UI (event listeners inside Editor module) ─────────────────
+    Editor.wireUI();
 
     // ─── Helper: build a full URL to an API endpoint ───────────────────────────
-    function apiUrl(endpoint) {
-        return `${API_ORIGIN}${endpoint}`;
+    function apiUrl(endpoint) { return `${API_ORIGIN}${endpoint}`; }
+    function currentKey()     { return apiKey; }
+
+    // ─── Stage management ──────────────────────────────────────────────────────
+    function showStage(name) {
+        stageUpload.classList.add("hidden");
+        stageProcessing.classList.add("hidden");
+        stageResult.classList.add("hidden");
+        workspaceCard.classList.remove("editing");
+
+        if (name === "upload")     stageUpload.classList.remove("hidden");
+        if (name === "processing") stageProcessing.classList.remove("hidden");
+        if (name === "result") {
+            stageResult.classList.remove("hidden");
+            workspaceCard.classList.add("editing");
+        }
     }
 
-    // ─── Helper: current key ───────────────────────────────────────────────────
-    function currentKey() {
-        return apiKey;
+    function setLoader(status, detail, pct) {
+        processingStatus.textContent = status;
+        processingDetail.textContent = detail;
+        progressBar.style.width      = `${pct}%`;
     }
 
     // ─── API Health Check ──────────────────────────────────────────────────────
@@ -74,38 +78,23 @@ document.addEventListener("DOMContentLoaded", () => {
     checkApiHealth();
     setInterval(checkApiHealth, 20000);
 
-    // ─── Before/After Comparison Slider ───────────────────────────────────────
-    function updateSlider(percent) {
-        imgOriginalWrapper.style.width = `${percent}%`;
-        comparisonDivider.style.left   = `${percent}%`;
-    }
-
-    function alignSliderImages() {
-        imgOriginal.style.width = `${comparisonWrapper.clientWidth}px`;
-    }
-
-    comparisonRange.addEventListener("input", (e) => updateSlider(e.target.value));
-    window.addEventListener("resize", alignSliderImages);
-
     // ─── File / URL Input Handling ─────────────────────────────────────────────
-    selectFileBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        fileInput.click();
-    });
+    selectFileBtn.addEventListener("click", e => { e.stopPropagation(); fileInput.click(); });
 
     fileInput.addEventListener("change", () => {
         if (fileInput.files.length > 0) processFile(fileInput.files[0]);
     });
 
-    dropzone.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        dropzone.classList.add("dragover");
-    });
-    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
-    dropzone.addEventListener("drop", (e) => {
+    dropzone.addEventListener("dragover",  e => { e.preventDefault(); dropzone.classList.add("dragover"); });
+    dropzone.addEventListener("dragleave", ()  => dropzone.classList.remove("dragover"));
+    dropzone.addEventListener("drop", e => {
         e.preventDefault();
         dropzone.classList.remove("dragover");
         if (e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]);
+    });
+    // Tap anywhere on dropzone also opens file dialog (mobile UX)
+    dropzone.addEventListener("click", e => {
+        if (e.target !== selectFileBtn) fileInput.click();
     });
 
     submitUrlBtn.addEventListener("click", () => {
@@ -115,39 +104,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ─── Core Processing Functions ─────────────────────────────────────────────
-    function showStage(name) {
-        stageUpload.classList.add("hidden");
-        stageProcessing.classList.add("hidden");
-        stageResult.classList.add("hidden");
-        if (name === "upload")     stageUpload.classList.remove("hidden");
-        if (name === "processing") stageProcessing.classList.remove("hidden");
-        if (name === "result")     stageResult.classList.remove("hidden");
-    }
-
-    function setLoader(status, detail, pct) {
-        processingStatus.textContent  = status;
-        processingDetail.textContent  = detail;
-        progressBar.style.width       = `${pct}%`;
-    }
-
     async function processFile(file) {
         const fd = new FormData();
         fd.append("file", file);
-        await sendRequest(fd, URL.createObjectURL(file));
+        await sendRequest(fd);
     }
 
     async function processUrl(url) {
         const fd = new FormData();
         fd.append("url", url);
-        await sendRequest(fd, url);
+        await sendRequest(fd);
     }
 
-    async function sendRequest(formData, originalSrc) {
+    async function sendRequest(formData) {
         showStage("processing");
         setLoader("Uploading image…", "Sending to server", 15);
-
-        imgOriginal.onload = alignSliderImages;
-        imgOriginal.src = originalSrc;
 
         try {
             const res = await fetch(apiUrl("/v1/remove-background?format=json"), {
@@ -167,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (data.status === "pending" || data.status === "processing") {
                 pollJob(data.job_id);
             } else if (data.status === "completed") {
-                await downloadAndShow(data.result_url);
+                await fetchResultAndEdit(data.result_url);
             }
         } catch (err) {
             showStage("upload");
@@ -177,10 +148,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function pollJob(jobId) {
         const pollUrl = apiUrl(`/v1/jobs/${jobId}`);
-        let attempts = 0;
+        let attempts  = 0;
 
         const timer = setInterval(async () => {
-            if (++attempts > 90) {              // 90 s timeout
+            if (++attempts > 90) {
                 clearInterval(timer);
                 showStage("upload");
                 showToast("Processing timed out — please try again.");
@@ -196,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else if (job.status === "completed") {
                     clearInterval(timer);
                     setLoader("Finalising…", "Downloading transparent PNG", 90);
-                    await downloadAndShow(job.result_url);
+                    await fetchResultAndEdit(job.result_url);
                 } else if (job.status === "failed") {
                     clearInterval(timer);
                     showStage("upload");
@@ -210,24 +181,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 1000);
     }
 
-    async function downloadAndShow(resultEndpoint) {
+    async function fetchResultAndEdit(resultEndpoint) {
         try {
             const res = await fetch(apiUrl(resultEndpoint), {
                 headers: { "X-API-Key": currentKey() }
             });
             if (!res.ok) throw new Error("Failed to fetch processed image.");
 
-            const blob    = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-
-            imgProcessed.onload = () => {
-                showStage("result");
-                updateSlider(50);
-                alignSliderImages();
-            };
-            imgProcessed.src    = blobUrl;
-            downloadBtn.href    = blobUrl;
-            downloadBtn.download = `clearcut_${Date.now()}.png`;
+            const blob = await res.blob();
+            showStage("result");
+            Editor.init(blob);         // Hand the processed PNG blob to the editor
         } catch (err) {
             showStage("upload");
             showToast(err.message || "Failed to retrieve result image.");
@@ -236,15 +199,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ─── Reset ─────────────────────────────────────────────────────────────────
     resetBtn.addEventListener("click", () => {
-        fileInput.value      = "";
-        imageUrlInput.value  = "";
-        if (imgProcessed.src.startsWith("blob:")) URL.revokeObjectURL(imgProcessed.src);
-        if (imgOriginal.src.startsWith("blob:"))  URL.revokeObjectURL(imgOriginal.src);
-        imgProcessed.src = "";
-        imgOriginal.src  = "";
+        fileInput.value     = "";
+        imageUrlInput.value = "";
+        Editor.reset();
         showStage("upload");
     });
-
 
     // ─── Toast ─────────────────────────────────────────────────────────────────
     function showToast(msg) {
