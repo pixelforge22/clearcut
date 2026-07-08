@@ -1388,6 +1388,7 @@ code {
     box-sizing: border-box;
     z-index: 10;
     pointer-events: auto;
+    touch-action: none;
 }
 
 .crop-handle {
@@ -1400,6 +1401,7 @@ code {
     box-sizing: border-box;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
     z-index: 15;
+    touch-action: none;
 }
 
 .crop-handle.nw { top: -7px; left: -7px; cursor: nwse-resize; }

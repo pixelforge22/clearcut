@@ -58,7 +58,6 @@ const Editor = (() => {
     return Math.max(1, Math.ceil((brushSize / 2) * imageWidth / r.width))
   }
 
-  /* ── Zoom helpers ────────────────────────────────────────────────────── */
   function applyZoom() {
     if (!canvas) return
     // Remove the default max-width/max-height constraints when zoomed
@@ -71,6 +70,8 @@ const Editor = (() => {
     
     const zVal = el('zoomLevelVal')
     if (zVal) zVal.textContent = `${Math.round(zoomScale * 100)}%`
+
+    if (isCropping) updateCropOverlayUI()
   }
 
   function resetZoom() {
