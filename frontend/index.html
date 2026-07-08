@@ -110,12 +110,34 @@
                                         <button class="zoom-btn-control" id="zoomResetBtn" title="Fit Screen">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
                                         </button>
+                                        <div class="topbar-divider"></div>
+                                        <button class="zoom-btn-control topbar-tool-btn" id="topbarPanBtn" title="Move / Pan (H)">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+                                        </button>
+                                        <button class="zoom-btn-control topbar-tool-btn" id="topbarCropBtn" title="Crop (C)">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>
+                                        </button>
                                     </div>
                                     <span class="canvas-keys-hint">E · R · M &nbsp;|&nbsp; [ ] size</span>
+                                </div>
+                                <!-- Crop confirm bar (appears only in crop mode) -->
+                                <div class="crop-confirm-bar hidden" id="cropConfirmBar">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>
+                                    <span>Drag handles to set crop area</span>
+                                    <div style="flex:1"></div>
+                                    <button class="crop-confirm-btn crop-confirm-apply" id="cropApplyBtn">✓ Apply Crop</button>
+                                    <button class="crop-confirm-btn crop-confirm-cancel" id="cropCancelBtn">✕ Cancel</button>
                                 </div>
                                 <div class="canvas-viewport image-bg-checkerboard" id="canvasViewport">
                                     <div id="canvasContainer" style="position:relative; display:inline-block; margin:auto;">
                                         <canvas id="editorCanvas"></canvas>
+                                        <!-- Crop overlay (hidden until crop mode active) -->
+                                        <div id="cropOverlay" class="crop-overlay hidden">
+                                            <div class="crop-handle nw" data-handle="nw"></div>
+                                            <div class="crop-handle ne" data-handle="ne"></div>
+                                            <div class="crop-handle sw" data-handle="sw"></div>
+                                            <div class="crop-handle se" data-handle="se"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -163,12 +185,6 @@
                                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg>
                                                 <span>Smart Remove</span>
                                                 <span class="tool-hint">M</span>
-                                            </button>
-
-                                            <button class="tool-btn tool-btn-wide" data-tool="pan">
-                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
-                                                <span>Move / Pan</span>
-                                                <span class="tool-hint">H</span>
                                             </button>
                                         </div>
 

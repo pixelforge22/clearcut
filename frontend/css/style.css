@@ -1375,3 +1375,105 @@ code {
     .swatches { grid-template-columns: repeat(4, 1fr); }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   TOPBAR TOOL BUTTONS (Pan + Crop — live next to zoom controls)
+═══════════════════════════════════════════════════════════════ */
+
+.topbar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-subtle, rgba(255,255,255,0.12));
+    margin: 0 0.2rem;
+    flex-shrink: 0;
+}
+
+.topbar-tool-btn {
+    position: relative;
+}
+
+.topbar-tool-btn.active,
+.topbar-tool-btn:focus-visible {
+    background: var(--color-accent) !important;
+    color: #000 !important;
+    outline: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CROP CONFIRM BAR
+═══════════════════════════════════════════════════════════════ */
+
+.crop-confirm-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.45rem 1rem;
+    background: rgba(30, 20, 0, 0.82);
+    border-bottom: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    font-size: 0.8rem;
+    font-weight: 500;
+    backdrop-filter: blur(8px);
+    animation: slideDown 0.18s ease;
+}
+
+.crop-confirm-bar.hidden { display: none; }
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.crop-confirm-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.crop-confirm-btn:hover { opacity: 0.85; }
+
+.crop-confirm-apply {
+    background: var(--color-accent);
+    color: #000;
+}
+
+.crop-confirm-cancel {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-primary, #fff);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CROP OVERLAY + HANDLES
+═══════════════════════════════════════════════════════════════ */
+
+.crop-overlay {
+    position: absolute;
+    border: 2px solid var(--color-accent);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+    box-sizing: border-box;
+    z-index: 10;
+    pointer-events: auto;
+    touch-action: none;
+    cursor: move;
+}
+
+.crop-overlay.hidden { display: none; }
+
+.crop-handle {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border: 2px solid var(--color-accent);
+    border-radius: 50%;
+    box-sizing: border-box;
+    z-index: 15;
+    touch-action: none;
+}
+
+.crop-handle[data-handle="nw"] { top: -7px;    left: -7px;   cursor: nwse-resize; }
+.crop-handle[data-handle="ne"] { top: -7px;    right: -7px;  cursor: nesw-resize; }
+.crop-handle[data-handle="sw"] { bottom: -7px; left: -7px;   cursor: nesw-resize; }
+.crop-handle[data-handle="se"] { bottom: -7px; right: -7px;  cursor: nwse-resize; }

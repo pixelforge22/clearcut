@@ -95,6 +95,137 @@ const Editor = (() => {
     applyZoom()
   }
 
+  /* ── Crop ────────────────────────────────────────────────────────────── */
+  let isCropping = false
+  const cropBox  = { left: 0, top: 0, width: 1, height: 1 } // normalised 0‑1
+
+  function startCrop() {
+    isCropping = true
+    cropBox.left = 0; cropBox.top = 0; cropBox.width = 1; cropBox.height = 1
+    syncCropOverlay()
+    const overlay = el('cropOverlay')
+    if (overlay) overlay.classList.remove('hidden')
+    const bar = el('cropConfirmBar')
+    if (bar) bar.classList.remove('hidden')
+    const btn = el('topbarCropBtn')
+    if (btn) btn.classList.add('active')
+  }
+
+  function cancelCrop() {
+    isCropping = false
+    const overlay = el('cropOverlay')
+    if (overlay) overlay.classList.add('hidden')
+    const bar = el('cropConfirmBar')
+    if (bar) bar.classList.add('hidden')
+    const btn = el('topbarCropBtn')
+    if (btn) btn.classList.remove('active')
+  }
+
+  function syncCropOverlay() {
+    const overlay = el('cropOverlay')
+    if (!overlay || !canvas) return
+    const cw = canvas.clientWidth, ch = canvas.clientHeight
+    overlay.style.left   = (cropBox.left   * cw) + 'px'
+    overlay.style.top    = (cropBox.top    * ch) + 'px'
+    overlay.style.width  = (cropBox.width  * cw) + 'px'
+    overlay.style.height = (cropBox.height * ch) + 'px'
+  }
+
+  function applyCrop() {
+    if (!canvas || !originalData || !isCropping) return
+    const imgX = Math.round(cropBox.left   * imageWidth)
+    const imgY = Math.round(cropBox.top    * imageHeight)
+    const imgW = Math.max(1, Math.round(cropBox.width  * imageWidth))
+    const imgH = Math.max(1, Math.round(cropBox.height * imageHeight))
+    if (imgW < 4 || imgH < 4) return
+
+    // Build new pixel buffers for the cropped region
+    const newOrig  = new Uint8ClampedArray(imgW * imgH * 4)
+    const newAlpha = new Uint8Array(imgW * imgH)
+    for (let dy = 0; dy < imgH; dy++) {
+      const srcY = imgY + dy
+      if (srcY < 0 || srcY >= imageHeight) continue
+      for (let dx = 0; dx < imgW; dx++) {
+        const srcX = imgX + dx
+        if (srcX < 0 || srcX >= imageWidth) continue
+        const si = (srcY * imageWidth + srcX) * 4
+        const di = (dy   * imgW      + dx)    * 4
+        newOrig[di]     = originalData[si]
+        newOrig[di + 1] = originalData[si + 1]
+        newOrig[di + 2] = originalData[si + 2]
+        newOrig[di + 3] = originalData[si + 3]
+        newAlpha[dy * imgW + dx] = alphaOverride[srcY * imageWidth + srcX]
+      }
+    }
+
+    // Commit
+    imageWidth    = imgW
+    imageHeight   = imgH
+    originalData  = newOrig
+    alphaOverride = newAlpha
+    canvas.width  = imgW
+    canvas.height = imgH
+    history.length = 0; histIdx = -1; saveHistory()
+    renderFull()
+    resetZoom()
+    cancelCrop()
+
+    const info = el('canvasInfo')
+    if (info) info.textContent = `${imgW} × ${imgH} px`
+  }
+
+  function setupCropDrag() {
+    const overlay = el('cropOverlay')
+    if (!overlay) return
+
+    let dragging = null, sx = 0, sy = 0, sBox = {}
+
+    const onDown = (e, handle) => {
+      e.preventDefault(); e.stopPropagation()
+      dragging = handle
+      sx = e.clientX; sy = e.clientY
+      sBox = { ...cropBox }
+      document.addEventListener('pointermove', onMove)
+      document.addEventListener('pointerup',   onUp)
+    }
+
+    overlay.addEventListener('pointerdown', e => {
+      if (!e.target.dataset.handle) onDown(e, 'move')
+    })
+    overlay.querySelectorAll('.crop-handle').forEach(h =>
+      h.addEventListener('pointerdown', e => onDown(e, h.dataset.handle))
+    )
+
+    const onMove = e => {
+      if (!dragging || !canvas) return
+      e.preventDefault()
+      const cw = canvas.clientWidth, ch = canvas.clientHeight
+      if (cw <= 0 || ch <= 0) return
+      const dx = (e.clientX - sx) / cw
+      const dy = (e.clientY - sy) / ch
+      const MIN = 20 / cw // min 20px
+
+      if (dragging === 'move') {
+        cropBox.left = Math.max(0, Math.min(1 - sBox.width,  sBox.left + dx))
+        cropBox.top  = Math.max(0, Math.min(1 - sBox.height, sBox.top  + dy))
+      } else {
+        let l = sBox.left, t = sBox.top, w = sBox.width, h = sBox.height
+        if (dragging.includes('w')) { const nl = Math.max(0, Math.min(l + w - MIN, l + dx)); w = w + (l - nl); l = nl }
+        if (dragging.includes('e')) { w = Math.max(MIN, Math.min(1 - l, w + dx)) }
+        if (dragging.includes('n')) { const nt = Math.max(0, Math.min(t + h - MIN, t + dy)); h = h + (t - nt); t = nt }
+        if (dragging.includes('s')) { h = Math.max(MIN, Math.min(1 - t, h + dy)) }
+        cropBox.left = l; cropBox.top = t; cropBox.width = w; cropBox.height = h
+      }
+      syncCropOverlay()
+    }
+
+    const onUp = () => {
+      dragging = null
+      document.removeEventListener('pointermove', onMove)
+      document.removeEventListener('pointerup',   onUp)
+    }
+  }
+
   /* ── Pixel math ──────────────────────────────────────────────────────── */
   function clamp(v) { return v < 0 ? 0 : v > 255 ? 255 : v }
 
@@ -404,8 +535,10 @@ const Editor = (() => {
       if (!e.ctrlKey && e.key.toLowerCase() === 'e') setTool('erase')
       if (!e.ctrlKey && e.key.toLowerCase() === 'r') setTool('restore')
       if (!e.ctrlKey && e.key.toLowerCase() === 'm') setTool('magic')
-
       if (!e.ctrlKey && e.key.toLowerCase() === 'h') setTool('pan')
+      if (!e.ctrlKey && e.key.toLowerCase() === 'c') {
+        if (isCropping) cancelCrop(); else startCrop()
+      }
       if (e.key === '[') {
         brushSize = Math.max(4, brushSize - 4)
         const bs = el('brushSize'); if (bs) bs.value = brushSize
@@ -512,6 +645,29 @@ const Editor = (() => {
     if (zOut) zOut.addEventListener('click', () => { zoomScale = Math.max(0.1, zoomScale - 0.15); applyZoom() })
     const zReset = el('zoomResetBtn')
     if (zReset) zReset.addEventListener('click', resetZoom)
+
+    /* Topbar Pan button */
+    const panBtn = el('topbarPanBtn')
+    if (panBtn) panBtn.addEventListener('click', () => {
+      const next = tool === 'pan' ? 'erase' : 'pan'
+      setTool(next)
+      panBtn.classList.toggle('active', next === 'pan')
+    })
+
+    /* Topbar Crop button */
+    const cropBtn = el('topbarCropBtn')
+    if (cropBtn) cropBtn.addEventListener('click', () => {
+      if (isCropping) { cancelCrop() } else { startCrop() }
+    })
+
+    /* Crop confirm bar */
+    const cropApply  = el('cropApplyBtn')
+    const cropCancel = el('cropCancelBtn')
+    if (cropApply)  cropApply.addEventListener('click',  applyCrop)
+    if (cropCancel) cropCancel.addEventListener('click', cancelCrop)
+
+    /* Crop drag handles */
+    setupCropDrag()
 
     /* Export buttons */
     ;['Png', 'Jpeg', 'Webp', 'Svg'].forEach(f => {
